@@ -12,7 +12,9 @@ Song = namedtuple('Song', ['artist', 'album', 'title', 'track', 'date'])
 
 def crawl(dir, extension):
     def full_path(root, files):
-        return (os.path.join(root, file) for file in files if file.endswith('.' + extension))
+        return (
+            os.path.join(root, file) for file in files if file.endswith('.' + extension)
+        )
 
     nested = (
         full_path(root, files) for root, dir, files in os.walk(dir) if len(files)
@@ -22,37 +24,41 @@ def crawl(dir, extension):
 
 
 def read_metadata(file):
-    def parseTrack(trackString):
-        if trackString is str:
+    def get(tagValue):
+        if isinstance(tagValue, list):
+            return tagValue[0] if len(tagValue) else None
+        return tagValue
+
+    def parseTrack(track):
+        if isinstance(track, str):
             try:
-                return int(trackString)
+                return int(track)
             except ValueError:
-                if '/' in trackString:
-                    return parseTrack(trackString.split('/')[0])
+                if '/' in track:
+                    return parseTrack(track.split('/')[0])
             except TypeError:
-                print(trackString)
+                print('parse error of %s' % track)
         return None
 
-    def parseDate(dateString):
-        if dateString:
-            try:
-                return int(dateString)
-            except ValueError:
-                pass
-            except TypeError:
-                print(dateString)
+    def parseDate(date):
+        try:
+            return int(date)
+        except (ValueError, TypeError):
+            print('parse error of %s' % date)
         return None
 
     id3 = EasyID3(file)
     return Song(
-        artist=id3.get('artist'), album=id3.get('album'), title=id3.get('title'),
-        track=parseTrack(id3.get('tracknumber')), date=parseDate(id3.get('date'))
+        artist=get(id3.get('artist')), album=get(id3.get('album')),
+        title=get(id3.get('title')), track=parseTrack(get(id3.get('tracknumber'))),
+        date=parseDate(get(id3.get('date')))
     )
 
 
 def main():
     for dir in sys.argv[1:]:
-        print([read_metadata(file) for file in crawl(dir, 'mp3')])
+        for file in crawl(dir, 'mp3'):
+            print(read_metadata(file))
 
 
 if __name__ == '__main__':
