@@ -29,18 +29,18 @@ def read_metadata(file):
             return tagValue[0] if len(tagValue) else None
         return tagValue
 
-    def parseTrack(track):
+    def parse_track(track):
         if isinstance(track, str):
             try:
                 return int(track)
             except ValueError:
                 if '/' in track:
-                    return parseTrack(track.split('/')[0])
+                    return parse_track(track.split('/')[0])
             except TypeError:
                 print('parse error of %s' % track)
         return None
 
-    def parseDate(date):
+    def parse_date(date):
         try:
             return int(date)
         except (ValueError, TypeError):
@@ -50,8 +50,8 @@ def read_metadata(file):
     id3 = EasyID3(file)
     return Song(
         artist=get(id3.get('artist')), album=get(id3.get('album')),
-        title=get(id3.get('title')), track=parseTrack(get(id3.get('tracknumber'))),
-        date=parseDate(get(id3.get('date')))
+        title=get(id3.get('title')), track=parse_track(get(id3.get('tracknumber'))),
+        date=parse_date(get(id3.get('date')))
     )
 
 
