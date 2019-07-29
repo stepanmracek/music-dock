@@ -93,6 +93,16 @@ def add_song():
     return song.to_dict(), 200
 
 
+@app.route('/songs/<int:id>', methods=['DELETE'])
+def delete_song(id):
+    song = Song.query.get(id)
+    if not song:
+        return ('Song not found', 404)
+    db.session.delete(song)
+    db.session.commit()
+    return song.to_dict(), 200
+
+
 # Song.query.delete()
 # Album.query.delete()
 # Artist.query.delete()
