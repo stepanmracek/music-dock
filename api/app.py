@@ -8,25 +8,61 @@ import json
 
 app = create_app(__name__)
 
-# a1 = Artist(name="Artist1")
-# b1 = Album(name='Album1', year=2005, artist=a1)
-# t1 = Song(track=1, name='song1', album=b1)
-# t2 = Song(track=2, name='song2', album=b1)
-# t3 = Song(track=3, name='song3', album=b1)
-# db.session.add(a1)
-# db.session.add(a1)
-# db.session.commit()
+
+def list_response(list):
+    return Response(json.dumps([item.to_dict() for item in list]), mimetype='application/json')
+
+
+def make_query(query, request):
+    if request.args:
+        return list_response(query.filter_by(**request.args).all())
+    else:
+        return list_response(query.all())
 
 
 @app.route('/songs', methods=['GET'])
 def get_all_songs():
-    return json.dumps([s.to_dict() for s in Song.query.all()]), 200
+    return make_query(Song.query, request)
 
 
 @app.route('/songs/<int:id>', methods=['GET'])
 def get_song(id):
     song = Song.query.get(id)
-    return (song.to_dict(), 200) if song else ('Not found', 404)
+    return (song.to_dict(), 200) if song else ('Song not found', 404)
+
+
+@app.route('/albums', methods=['GET'])
+def get_all_albums():
+    return make_query(Album.query, request)
+
+
+@app.route('/albums/<int:id>', methods=['GET'])
+def get_album(id):
+    album = Album.query.get(id)
+    return (album.to_dict(), 200) if album else ('Album not found', 404)
+
+
+@app.route('/albums/<int:album_id>/songs', methods=['GET'])
+def get_album_songs(album_id):
+    songs = Song.query.filter_by(album_id=album_id).order_by(Song.track).all()
+    return list_response(songs)
+
+
+@app.route('/artists', methods=['GET'])
+def get_all_artists():
+    return make_query(Artist.query, request)
+
+
+@app.route('/artists/<int:id>', methods=['GET'])
+def get_artist(id):
+    album = Artist.query.get(id)
+    return (album.to_dict(), 200) if album else ('Artist not found', 404)
+
+
+@app.route('/artists/<int:artist_id>/albums', methods=['GET'])
+def get_artist_albums(artist_id):
+    albums = Album.query.filter_by(artist_id=artist_id).order_by(Album.year).all()
+    return list_response(albums)
 
 
 @app.route('/songs', methods=['POST'])
@@ -54,11 +90,12 @@ def add_song():
 
     db.session.add(song)
     db.session.commit()
-    return json.dumps(song.to_dict()), 200
+    return song.to_dict(), 200
 
 
-Song.query.delete()
-Album.query.delete()
-Artist.query.delete()
-db.session.commit()
-app.run(debug=True)
+# Song.query.delete()
+# Album.query.delete()
+# Artist.query.delete()
+# db.session.commit()
+
+app.run()
