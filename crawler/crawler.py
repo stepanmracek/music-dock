@@ -9,7 +9,7 @@ from mutagen.easyid3 import EasyID3
 from collections import namedtuple
 
 
-Song = namedtuple('Song', ['artist_name', 'album_name', 'name', 'track', 'date'])
+Song = namedtuple('Song', ['artist_name', 'album_name', 'name', 'track', 'year'])
 
 
 def crawl(dir, extension):
@@ -55,7 +55,7 @@ def read_metadata(file):
         album_name=get(id3.get('album')),
         name=get(id3.get('title')),
         track=parse_track(get(id3.get('tracknumber'))),
-        date=parse_date(get(id3.get('date')))
+        year=parse_date(get(id3.get('date')))
     )
 
 
@@ -69,7 +69,7 @@ def main():
                 headers = {"Content-Type": "application/json"}
                 payload = json.dumps(metadata._asdict())
                 print(payload)
-                response = requests.post('http://127.0.0.1:5000/songs', data=payload, headers=headers)
+                response = requests.post('http://localhost:5000/songs', data=payload, headers=headers)
                 print(response.text)
             except Exception as e:
                 print('Error when uploading', metadata, e)
