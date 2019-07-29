@@ -10,6 +10,7 @@ from collections import namedtuple
 
 
 Song = namedtuple('Song', ['artist_name', 'album_name', 'name', 'track', 'year'])
+SONGS_URL = 'http://localhost/api/songs'
 
 
 def crawl(dir, extension):
@@ -59,7 +60,23 @@ def read_metadata(file):
     )
 
 
+def delete_all():
+    r = requests.get(SONGS_URL)
+    songs_list = r.json()
+    for song in songs_list:
+        print(f'Deleteting id: {song["id"]}')
+        try:
+            requests.delete(f'{SONGS_URL}/{song["id"]}')
+        except Exception as e:
+            print(f'Deleteting id: {song["id"]} failed: {e}')
+
+
 def main():
+    if sys.argv[1] == '--delete-all':
+        print('Deleting all records')
+        delete_all()
+        return
+
     for dir in sys.argv[1:]:
         for file in crawl(dir, 'mp3'):
             metadata = read_metadata(file)
@@ -69,7 +86,7 @@ def main():
                 headers = {"Content-Type": "application/json"}
                 payload = json.dumps(metadata._asdict())
                 print(payload)
-                response = requests.post('http://localhost:5000/songs', data=payload, headers=headers)
+                response = requests.post(SONGS_URL, data=payload, headers=headers)
                 print(response.text)
             except Exception as e:
                 print('Error when uploading', metadata, e)
