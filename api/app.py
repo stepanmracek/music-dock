@@ -104,7 +104,7 @@ def delete_song(id):
     db.session.delete(song)
     db.session.commit()
     redis.decr('songs')
-    return song.to_dict(), 200
+    return f'Deleted {id}', 200
 
 
 @app.route('/stats', methods=['GET'])
