@@ -3,11 +3,13 @@
 import os
 import sys
 import itertools
+import requests
+import json
 from mutagen.easyid3 import EasyID3
 from collections import namedtuple
 
 
-Song = namedtuple('Song', ['artist', 'album', 'title', 'track', 'date'])
+Song = namedtuple('Song', ['artist_name', 'album_name', 'name', 'track', 'date'])
 
 
 def crawl(dir, extension):
@@ -49,8 +51,10 @@ def read_metadata(file):
 
     id3 = EasyID3(file)
     return Song(
-        artist=get(id3.get('artist')), album=get(id3.get('album')),
-        title=get(id3.get('title')), track=parse_track(get(id3.get('tracknumber'))),
+        artist_name=get(id3.get('artist')),
+        album_name=get(id3.get('album')),
+        name=get(id3.get('title')),
+        track=parse_track(get(id3.get('tracknumber'))),
         date=parse_date(get(id3.get('date')))
     )
 
@@ -58,7 +62,17 @@ def read_metadata(file):
 def main():
     for dir in sys.argv[1:]:
         for file in crawl(dir, 'mp3'):
-            print(read_metadata(file))
+            metadata = read_metadata(file)
+            print(metadata)
+
+            try:
+                headers = {"Content-Type": "application/json"}
+                payload = json.dumps(metadata._asdict())
+                print(payload)
+                response = requests.post('http://127.0.0.1:5000/songs', data=payload, headers=headers)
+                print(response.text)
+            except Exception as e:
+                print('Error when uploading', metadata, e)
 
 
 if __name__ == '__main__':
