@@ -6,7 +6,7 @@ from flask import request, abort, Response
 import json
 
 
-app = create_app(__name__)
+app, redis = create_app(__name__)
 
 
 def list_response(list):
@@ -75,12 +75,14 @@ def add_song():
     if not artist:
         artist = Artist(name=artist_name)
         db.session.add(artist)
+        redis.incr('artists')
 
     album_name = request.json.get('album_name', 'Unknown Album')
     album = Album.query.filter_by(name=album_name, artist_id=artist.id).first()
     if not album:
         album = Album(name=album_name, year=request.json.get('year'), artist=artist)
         db.session.add(album)
+        redis.incr('albums')
 
     song = Song(
         track=request.json.get('track'),
@@ -90,6 +92,7 @@ def add_song():
 
     db.session.add(song)
     db.session.commit()
+    redis.incr('songs')
     return song.to_dict(), 200
 
 
@@ -100,12 +103,27 @@ def delete_song(id):
         return ('Song not found', 404)
     db.session.delete(song)
     db.session.commit()
+    redis.decr('songs')
     return song.to_dict(), 200
 
+
+@app.route('/stats', methods=['GET'])
+def stats():
+    return {
+        'artists': int(redis.get('artists')),
+        'albums': int(redis.get('albums')),
+        'songs': int(redis.get('songs'))
+    }, 200
 
 # Song.query.delete()
 # Album.query.delete()
 # Artist.query.delete()
 # db.session.commit()
 
-app.run()
+
+redis.set('artists', Artist.query.count())
+redis.set('albums', Album.query.count())
+redis.set('songs', Song.query.count())
+
+if __name__ == '__main__':
+    app.run()

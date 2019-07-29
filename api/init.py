@@ -1,5 +1,6 @@
 from flask import Flask
 from models import db
+from redis_client import create_client
 
 
 def create_app(name):
@@ -9,4 +10,7 @@ def create_app(name):
     app.app_context().push()
     db.init_app(app)
     db.create_all()
-    return app
+
+    redis_client = create_client(app)
+
+    return app, redis_client

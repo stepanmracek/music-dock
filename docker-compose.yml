@@ -25,8 +25,9 @@ services:
     restart: always
     environment:
       POSTGRES_PASSWORD: example
-    expose:
-      - 5432
+
+  redis:
+    image: redis
 
   adminer:
     image: adminer
