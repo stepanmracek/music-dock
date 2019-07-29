@@ -1,42 +1,64 @@
 #! /usr/bin/env python
 
-from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
+from models import Album, Artist, Song, db
+from init import create_app
+from flask import request, abort, Response
+import json
 
 
-app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'
-db = SQLAlchemy(app)
+app = create_app(__name__)
+
+# a1 = Artist(name="Artist1")
+# b1 = Album(name='Album1', year=2005, artist=a1)
+# t1 = Song(track=1, name='song1', album=b1)
+# t2 = Song(track=2, name='song2', album=b1)
+# t3 = Song(track=3, name='song3', album=b1)
+# db.session.add(a1)
+# db.session.add(a1)
+# db.session.commit()
 
 
-class Artist(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(120), nullable=True)
+@app.route('/songs', methods=['GET'])
+def get_all_songs():
+    return json.dumps([s.to_dict() for s in Song.query.all()]), 200
 
 
-class Album(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(120), nullable=True)
-    year = db.Column(db.Integer, nullable=True)
-    artist_id = db.Column(db.Integer, db.ForeignKey('artist.id'), nullable=False)
-    artist = db.relationship('Artist', backref=db.backref('albums', lazy=True))
+@app.route('/songs/<int:id>', methods=['GET'])
+def get_song(id):
+    song = Song.query.get(id)
+    return (song.to_dict(), 200) if song else ('Not found', 404)
 
 
-class Song(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    track = db.Column(db.Integer, nullable=True)
-    name = db.Column(db.String(120), nullable=True)
-    album_id = db.Column(db.Integer, db.ForeignKey('album.id'), nullable=False)
-    album = db.relationship('Album', backref=db.backref('songs', lazy=True))
+@app.route('/songs', methods=['POST'])
+def add_song():
+    if not request.json:
+        abort(Response('Request not in JSON format', 400))
+
+    artist_name = request.json.get('artist_name', 'Unknown Artist')
+    artist = Artist.query.filter_by(name=artist_name).first()
+    if not artist:
+        artist = Artist(name=artist_name)
+        db.session.add(artist)
+
+    album_name = request.json.get('album_name', 'Unknown Album')
+    album = Album.query.filter_by(name=album_name, artist_id=artist.id).first()
+    if not album:
+        album = Album(name=album_name, year=request.json.get('year'), artist=artist)
+        db.session.add(album)
+
+    song = Song(
+        track=request.json.get('track'),
+        name=request.json.get('name'),
+        album=album
+    )
+
+    db.session.add(song)
+    db.session.commit()
+    return json.dumps(song.to_dict()), 200
 
 
-db.create_all()
-
-a1 = Artist(name="Artist1")
-b1 = Album(name='Album1', year=2005, artist=a1)
-t1 = Song(track=1, name='song1', album=b1)
-t2 = Song(track=2, name='song2', album=b1)
-t3 = Song(track=3, name='song3', album=b1)
-db.session.add(a1)
-db.session.add(a1)
+Song.query.delete()
+Album.query.delete()
+Artist.query.delete()
 db.session.commit()
+app.run(debug=True)
