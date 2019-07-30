@@ -15,8 +15,10 @@ services:
     image: api
     volumes:
       - ./api:/code
+    env_file: postgres.conf
     depends_on:
-      - "db"
+      - db
+      - redis
     labels:
       - "traefik.frontend.rule=PathPrefixStrip:/api"
       - "traefik.port=5000"
@@ -24,8 +26,7 @@ services:
   db:
     image: postgres
     restart: always
-    environment:
-      POSTGRES_PASSWORD: example
+    env_file: postgres.conf
 
   redis:
     image: redis

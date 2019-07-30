@@ -2,11 +2,11 @@
 
 from models import Album, Artist, Song, db
 from init import create_app
-from flask import request, abort, Response
+from flask import request, abort, Response, g
 import json
 
 
-app, redis = create_app(__name__)
+app = create_app(__name__)
 
 
 def list_response(list):
@@ -75,14 +75,14 @@ def add_song():
     if not artist:
         artist = Artist(name=artist_name)
         db.session.add(artist)
-        redis.incr('artists')
+        g.redis.incr('artists')
 
     album_name = request.json.get('album_name', 'Unknown Album')
     album = Album.query.filter_by(name=album_name, artist_id=artist.id).first()
     if not album:
         album = Album(name=album_name, year=request.json.get('year'), artist=artist)
         db.session.add(album)
-        redis.incr('albums')
+        g.redis.incr('albums')
 
     song = Song(
         track=request.json.get('track'),
@@ -92,7 +92,7 @@ def add_song():
 
     db.session.add(song)
     db.session.commit()
-    redis.incr('songs')
+    g.redis.incr('songs')
     return song.to_dict(), 200
 
 
@@ -103,16 +103,16 @@ def delete_song(id):
         return ('Song not found', 404)
     db.session.delete(song)
     db.session.commit()
-    redis.decr('songs')
+    g.redis.decr('songs')
     return f'Deleted {id}', 200
 
 
 @app.route('/stats', methods=['GET'])
 def stats():
     return {
-        'artists': int(redis.get('artists')),
-        'albums': int(redis.get('albums')),
-        'songs': int(redis.get('songs'))
+        'artists': int(g.redis.get('artists')),
+        'albums': int(g.redis.get('albums')),
+        'songs': int(g.redis.get('songs'))
     }, 200
 
 # Song.query.delete()
@@ -121,9 +121,9 @@ def stats():
 # db.session.commit()
 
 
-redis.set('artists', Artist.query.count())
-redis.set('albums', Album.query.count())
-redis.set('songs', Song.query.count())
+g.redis.set('artists', Artist.query.count())
+g.redis.set('albums', Album.query.count())
+g.redis.set('songs', Song.query.count())
 
 if __name__ == '__main__':
     app.run()

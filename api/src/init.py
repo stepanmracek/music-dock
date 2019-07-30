@@ -1,16 +1,17 @@
-from flask import Flask
+from flask import Flask, g
 from models import db
 from redis_client import create_client
+from database import DATABASE_CONNECTION_URI
 
 
 def create_app(name):
     app = Flask(name)
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres+psycopg2://postgres:example@db:5432/postgres'
+    app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_CONNECTION_URI
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.app_context().push()
     db.init_app(app)
     db.create_all()
 
-    redis_client = create_client(app)
+    g.redis = create_client(app)
 
-    return app, redis_client
+    return app
