@@ -66,7 +66,10 @@ def delete_all():
     for song in songs_list:
         print(f'Deleteting id: {song["id"]}')
         try:
-            requests.delete(f'{SONGS_URL}/{song["id"]}')
+            response = requests.delete(f'{SONGS_URL}/{song["id"]}')
+            if response.status_code != 200:
+                print('status_code:', response.status_code)
+                break
         except Exception as e:
             print(f'Deleteting id: {song["id"]} failed: {e}')
 

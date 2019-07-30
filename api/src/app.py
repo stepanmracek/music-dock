@@ -101,9 +101,21 @@ def delete_song(id):
     song = Song.query.get(id)
     if not song:
         return ('Song not found', 404)
+
+    album = song.album
+    artist = album.artist
+    delete_album = Song.query.filter(Song.album_id == album.id).count() <= 1
+    delete_artist = Artist.query.join(Album).join(Song).filter(Artist.id == artist.id).count() <= 1
+
     db.session.delete(song)
-    db.session.commit()
+    if delete_album:
+        db.session.delete(album)
+        g.redis.decr('albums')
+    if delete_artist:
+        db.session.delete(artist)
+        g.redis.decr('artists')
     g.redis.decr('songs')
+    db.session.commit()
     return f'Deleted {id}', 200
 
 
@@ -114,11 +126,6 @@ def stats():
         'albums': int(g.redis.get('albums')),
         'songs': int(g.redis.get('songs'))
     }, 200
-
-# Song.query.delete()
-# Album.query.delete()
-# Artist.query.delete()
-# db.session.commit()
 
 
 g.redis.set('artists', Artist.query.count())
