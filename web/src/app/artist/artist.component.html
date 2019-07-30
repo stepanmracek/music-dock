@@ -1,0 +1,6 @@
+<h3 matRipple (click)="expanded = !expanded"><mat-icon>person</mat-icon> {{artist.name}}</h3>
+<ng-container *ngIf="expanded">
+    <div style="padding-left: 12px" *ngIf="(albums$ | async) as albums">
+        <app-album *ngFor="let album of albums" [album]="album"></app-album>
+    </div>
+</ng-container>

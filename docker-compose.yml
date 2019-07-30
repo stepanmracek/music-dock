@@ -10,6 +10,14 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock #So that Traefik can listen to the Docker events
 
+  web:
+    build: web
+    image: web
+    depends_on:
+      - api
+    labels:
+      - "traefik.frontend.rule=Host:localhost"
+
   api:
     build: api
     image: api
@@ -35,6 +43,5 @@ services:
     image: adminer
     restart: always
     labels:
-      #- "traefik.frontend.rule=Host:adminer.localhost"
       - "traefik.frontend.rule=PathPrefixStrip:/adminer"
       - "traefik.port=8080"

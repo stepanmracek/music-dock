@@ -1,0 +1,10 @@
+<h3 matRipple (click)="expanded = !expanded">
+    <mat-icon>album</mat-icon>
+    {{album.name}} <span *ngIf="album.year">({{album.year}})</span>
+</h3>
+
+<ng-container *ngIf="expanded">
+    <mat-list style="padding-left: 12px" *ngIf="(songs$ | async) as songs">
+        <mat-list-item *ngFor="let song of songs">{{song.track}}. {{song.name}}</mat-list-item>
+    </mat-list>
+</ng-container>

@@ -1,0 +1,3 @@
+<ng-container *ngIf="(artists$ | async) as artists">
+    <app-artist *ngFor="let artist of artists" [artist]="artist"></app-artist>
+</ng-container>
